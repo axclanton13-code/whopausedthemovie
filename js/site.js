@@ -1,0 +1,59 @@
+
+const content=window.PORTFOLIO_CONTENT;const collections=document.querySelector('#collections');const grid=document.querySelector('#video-grid');const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+const imgList=[];
+content.collections.forEach((group,i)=>{const section=document.createElement('section');section.className='collection';section.id='collection-'+i;section.innerHTML=`<div class="collection-heading reveal"><div><div class="eyebrow">EXHIBIT / ${String(i+1).padStart(2,'0')}</div><h2>${group.title}</h2></div><p>${group.subtitle}</p></div>`;const gallery=document.createElement('div');gallery.className='photo-grid'+(group.title==='TONE CHANGE'?' tone-grid':'');if(group.title==='TONE CHANGE' && group.images.length>=2){
+ const compare=document.createElement('div');compare.className='tone-compare tone-three reveal';
+ compare.style.setProperty('--split-a','33.33%');compare.style.setProperty('--split-b','66.67%');
+ const bw=group.blackWhiteImage || 'assets/photos/DSC04749_BW.jpg';
+ compare.innerHTML=`<div class="tone-visual" aria-label="Three treatments of the same photograph, with adjustable boundaries"><img class="tone-layer tone-layer-warm" src="${group.images[0]}" alt="Warm color treatment"><div class="tone-layer-clip tone-layer-cool"><img src="${group.images[1]}" alt="Cool color treatment"></div><div class="tone-layer-clip tone-layer-bw"><img src="${bw}" alt="Black and white treatment"></div><div class="tone-divider tone-divider-a" aria-hidden="true"><span>↔</span></div><div class="tone-divider tone-divider-b" aria-hidden="true"><span>↔</span></div><span class="tone-tag tone-tag-left">01 / ORIGINAL</span><span class="tone-tag tone-tag-mid">02 / ALTERNATE</span><span class="tone-tag tone-tag-right">03 / B&W</span></div><div class="tone-controls"><label>01 → 02 <input class="tone-range-a" type="range" min="0" max="100" value="33" aria-label="Move the divider between original and alternate grades"></label><label>02 → 03 <input class="tone-range-b" type="range" min="0" max="100" value="67" aria-label="Move the divider between alternate and black and white grades"></label></div><div class="tone-help">DRAG THE DIVIDERS OR USE THE SLIDERS BELOW · THREE TONES / ONE FRAME</div>`;
+ const visual=compare.querySelector('.tone-visual'),first=compare.querySelector('.tone-range-a'),second=compare.querySelector('.tone-range-b');
+ let a=33.33,b=66.67;
+ function update(which,value){value=Math.max(0,Math.min(100,value));if(which==='a')a=Math.min(value,b);else b=Math.max(value,a);compare.style.setProperty('--split-a',a+'%');compare.style.setProperty('--split-b',b+'%');first.value=Math.round(a);second.value=Math.round(b)}
+ first.addEventListener('input',()=>update('a',Number(first.value)));second.addEventListener('input',()=>update('b',Number(second.value)));
+ let dragging=null;
+ visual.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse')return;const rect=visual.getBoundingClientRect();const x=(e.clientX-rect.left)/rect.width*100;dragging=Math.abs(x-a)<=Math.abs(x-b)?'a':'b';visual.setPointerCapture(e.pointerId);update(dragging,x)});
+ visual.addEventListener('pointermove',e=>{if(!dragging)return;const rect=visual.getBoundingClientRect();update(dragging,(e.clientX-rect.left)/rect.width*100)});
+ visual.addEventListener('pointerup',()=>dragging=null);visual.addEventListener('pointercancel',()=>dragging=null);
+ gallery.append(compare);
+ }else{group.images.forEach((src,j)=>{const idx=imgList.push(src)-1;const tile=document.createElement('button');tile.className='photo-tile reveal';tile.type='button';tile.setAttribute('aria-label',`Open ${group.title} image ${j+1}`);const image=document.createElement('img');image.src=src;image.loading='lazy';image.alt=`${group.title} photograph ${j+1}`;tile.append(image);tile.insertAdjacentHTML('beforeend',`<span class="tile-label">VIEW FRAME ↗</span><span class="tile-num">${String(j+1).padStart(2,'0')} / ${String(group.images.length).padStart(2,'0')}</span>`);tile.addEventListener('click',()=>openImage(idx));gallery.append(tile)})}section.append(gallery);collections.append(section)});
+content.videos.forEach((v,i)=>{if(v.src===content.featured.preview)return;const cell=document.createElement('article');cell.className='video-cell reveal';cell.tabIndex=0;cell.setAttribute('role','button');cell.setAttribute('aria-label','Play full video: '+v.title);cell.addEventListener('click',()=>openGalleryFilm(v));cell.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();openGalleryFilm(v)}});const video=document.createElement('video');video.src=v.src;video.muted=true;video.loop=true;video.playsInline=true;video.preload='metadata';if(v.title==='LXID — Music Video')video.poster='assets/videos/lxid-poster.jpg';video.setAttribute('aria-label',v.title+' video preview');video.addEventListener('mouseenter',()=>video.play().catch(()=>{}));video.addEventListener('mouseleave',()=>{video.pause();video.currentTime=0});cell.append(video);const meta=document.createElement('div');meta.className='video-meta';const title=document.createElement('h3');title.textContent=v.title;meta.append(title);const span=document.createElement('span');span.textContent=String(i+1).padStart(2,'0')+' / '+v.group;meta.append(span);cell.append(meta);const source=document.createElement('div');source.className='video-source';source.textContent=v.caption || '';cell.append(source);grid.append(cell)});
+let current=0,lastFocus=null;const lightbox=document.querySelector('#lightbox'),lbImage=lightbox.querySelector('img');const film=document.querySelector('#film-modal');
+function openImage(i){lastFocus=document.activeElement;current=i;lbImage.src=imgList[current];lightbox.querySelector('.image-counter').textContent=`${current+1} / ${imgList.length}`;lightbox.classList.add('open');lightbox.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';lightbox.querySelector('.overlay-close').focus()}
+function moveImage(delta){current=(current+delta+imgList.length)%imgList.length;lbImage.src=imgList[current];lightbox.querySelector('.image-counter').textContent=`${current+1} / ${imgList.length}`}
+function closeOverlays(){for(const el of [lightbox,film]){el.classList.remove('open');el.setAttribute('aria-hidden','true')}film.querySelector('.film-frame').replaceChildren();document.body.style.overflow='';lastFocus?.focus()}
+lightbox.querySelector('.image-prev').onclick=()=>moveImage(-1);lightbox.querySelector('.image-next').onclick=()=>moveImage(1);document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',closeOverlays));[lightbox,film].forEach(el=>el.addEventListener('click',e=>{if(e.target===el)closeOverlays()}));
+document.querySelector('.featured-launch').addEventListener('click',()=>{lastFocus=document.activeElement;const frame=document.createElement('iframe');frame.src=`https://www.youtube-nocookie.com/embed/${content.featured.youtubeId}?autoplay=1&rel=0`;frame.title='Featured film on YouTube';frame.allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';frame.allowFullscreen=true;film.querySelector('.film-frame').append(frame);film.classList.add('open');film.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';film.querySelector('.overlay-close').focus()});
+document.querySelector('.morphine-launch')?.addEventListener('click',()=>{lastFocus=document.activeElement;const frame=document.createElement('iframe');frame.src='https://www.youtube-nocookie.com/embed/H1yz0r__s44?autoplay=1&rel=0';frame.title='Morphine — Showpony (2025)';frame.allow='accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; web-share';frame.allowFullscreen=true;film.querySelector('.film-frame').replaceChildren(frame);film.classList.add('open');film.setAttribute('aria-hidden','false');document.body.style.overflow='hidden';film.querySelector('.overlay-close').focus()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeOverlays();if(lightbox.classList.contains('open')&&e.key==='ArrowRight')moveImage(1);if(lightbox.classList.contains('open')&&e.key==='ArrowLeft')moveImage(-1)});
+const observers=[];const revealObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('visible');revealObserver.unobserve(entry.target)}})},{threshold:.08});document.querySelectorAll('.reveal').forEach(el=>{if(reduced)el.classList.add('visible');else revealObserver.observe(el)});
+const videoObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{const v=entry.target;if(entry.isIntersecting&&document.querySelector('#motion').classList.contains('active')&&!reduced)v.play().catch(()=>{});else v.pause()})},{threshold:.35});document.querySelectorAll('.video-cell video').forEach(v=>videoObserver.observe(v));
+function route(){closeOverlays();const requested=location.hash.replace('#','');const routeName=['work','motion','about'].includes(requested)?requested:'work';document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active',p.id===routeName));document.querySelectorAll('[data-route]').forEach(a=>a.classList.toggle('active',a.dataset.route===routeName));document.querySelectorAll('.video-cell video').forEach(v=>v.pause());if(routeName==='motion'&&!reduced){document.querySelectorAll('.video-cell video').forEach(v=>{if(v.getBoundingClientRect().top<innerHeight)v.play().catch(()=>{})})}window.scrollTo({top:0,behavior:'instant'});document.querySelectorAll('.reveal').forEach(el=>{if(el.getBoundingClientRect().top<innerHeight)el.classList.add('visible')})}
+window.addEventListener('hashchange',route);route();window.addEventListener('scroll',()=>{const available=document.documentElement.scrollHeight-innerHeight;document.querySelector('#progress').style.width=(available>0?scrollY/available*100:0)+'%'},{passive:true});
+
+document.querySelector('#explore-work').addEventListener('click',e=>{e.preventDefault();document.querySelector('#collection-0').scrollIntoView({behavior:reduced?'instant':'smooth'});});
+
+
+// Persistent full-length gallery player. Resizing never replaces the video element.
+const expandedPlayer=document.querySelector('#expanded-player');
+const fullVideo=document.querySelector('#player-video');
+const miniButton=document.querySelector('#player-mini');
+const expandButton=document.querySelector('#player-expand');
+const closeButton=document.querySelector('#player-close');
+function openGalleryFilm(item){
+  const target=item.fullSrc;
+  if(!target)return;
+  if(fullVideo.dataset.source!==target){fullVideo.pause();fullVideo.src=target;fullVideo.dataset.source=target;fullVideo.load()}
+  document.querySelector('#player-title').textContent=item.title;
+  document.querySelector('#player-caption').textContent=item.caption||item.group||'';
+  expandedPlayer.hidden=false;
+  expandedPlayer.classList.remove('minimized');
+  miniButton.hidden=false;expandButton.hidden=true;
+  document.querySelectorAll('.video-cell video').forEach(v=>v.pause());
+  expandedPlayer.scrollIntoView({behavior:reduced?'instant':'smooth',block:'center'});
+  fullVideo.play().catch(()=>{});
+}
+function setMini(mini){expandedPlayer.classList.toggle('minimized',mini);miniButton.hidden=mini;expandButton.hidden=!mini;if(!mini)expandedPlayer.scrollIntoView({behavior:'smooth',block:'center'})}
+miniButton.addEventListener('click',()=>setMini(true));
+expandButton.addEventListener('click',()=>setMini(false));
+closeButton.addEventListener('click',()=>{fullVideo.pause();expandedPlayer.hidden=true;expandedPlayer.classList.remove('minimized');fullVideo.removeAttribute('src');fullVideo.load();fullVideo.dataset.source=''});
+fullVideo.addEventListener('error',()=>{document.querySelector('#player-caption').textContent='This full video could not be loaded. Check that the assets/full folder is present.'});

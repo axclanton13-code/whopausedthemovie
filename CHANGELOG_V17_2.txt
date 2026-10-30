@@ -1,0 +1,1 @@
+Version 17.2: Replaced the TikTok iframe with a custom editorial video link card. No TikTok profile photo appears; creator handle @mahdernized appears beside the featured Baby Osamaa project. Clicking the card or text link opens the original TikTok. Retains V17.1 typography and all gallery edits. Lightweight preview excludes local full-length video files.

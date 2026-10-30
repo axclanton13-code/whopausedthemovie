@@ -1,0 +1,12 @@
+WHO PAUSED THE MOVIE — NETLIFY READY VERSION 15
+
+1. Go to https://app.netlify.com/drop
+2. Upload this ZIP if the interface accepts ZIPs, or extract it and drag the extracted folder.
+3. index.html MUST be at the publish root. This package already has that structure.
+4. Wait for deployment and open the generated https://...netlify.app URL.
+5. Check WORK, MOTION, ABOUT; click a motion tile, play a full-length video, minimize, expand; check mobile.
+
+All photos, preview clips, and 18 full videos are included in this package.
+If upload fails due to size/plan limits, use Netlify CLI or a Git-based deployment, or host videos separately.
+The featured YouTube film requires internet and embedding permission.
+Do not share client-owned inspection imagery unless you have publication permission.
